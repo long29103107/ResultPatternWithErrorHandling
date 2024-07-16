@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Error = ResultPatternExample.Exceptions.Error;
+﻿using Error = ResultPatternExample.Exceptions.Error;
 
 namespace ResultPatternExample.Responses;
 
@@ -43,5 +42,42 @@ public class Response<T> where T : class
     public static Response<T> Failure(Error error, int statusCode)
     {
         return new(new List<Error>() { error }, default(T), statusCode);
+    }
+}
+
+
+public class Response
+{
+    public Response(List<Error> errors,  int statusCode)
+    {
+        Errors = errors;
+        StatusCode = statusCode;
+    }
+
+    public List<Error> Errors { get; } = new List<Error>();
+
+    public int StatusCode { get; } = StatusCodes.Status200OK;
+
+    public bool IsSuccess
+    {
+        get
+        {
+            return !this.Errors.Any();
+        }
+    }
+
+    public static Response Success()
+    {
+        return new(new List<Error>(), StatusCodes.Status200OK);
+    }
+
+    public static Response Failure(List<Error> errors, int statusCode)
+    {
+        return new(errors, statusCode);
+    }
+
+    public static Response Failure(Error error, int statusCode)
+    {
+        return new(new List<Error>() { error }, statusCode);
     }
 }

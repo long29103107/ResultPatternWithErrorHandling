@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ResultPatternExample.Requests;
 using ResultPatternExample.Responses;
 using ResultPatternExample.Services;
@@ -6,6 +7,7 @@ using ResultPatternExample.Services;
 namespace ResultPatternExample.Controllers;
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class TodosController : ControllerBase
 {
     private readonly ITodoService _service;

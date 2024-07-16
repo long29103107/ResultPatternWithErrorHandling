@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using ResultPatternExample;
+using ResultPatternExample.Middlewares;
 using ResultPatternExample.Repositories;
 using ResultPatternExample.Services;
 using ResultPatternExample.Validations;
@@ -17,6 +18,7 @@ builder.Services.AddScoped<ITodoRepository, TodoRepository>();
 builder.Services.AddScoped<ITodoService, TodoService>();
 builder.Services.AddValidatorsFromAssemblyContaining<TodoValidator>();
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
@@ -26,6 +28,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
