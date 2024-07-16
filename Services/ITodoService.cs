@@ -7,5 +7,5 @@ public interface ITodoService
 {
     Task<Response<List<Todo>>> GetAllAsync();
     Task<Response<Todo>> GetAsync(int id);
-    Task<Response<Todo>> CreateAsync(CreateTodoRequest request);
+    Task<Response> CreateAsync(CreateTodoRequest request);
 }

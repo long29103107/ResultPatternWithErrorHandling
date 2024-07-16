@@ -19,9 +19,23 @@ public class ExceptionHandlingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Buffer the response body
+        var originalBodyStream = context.Response.Body;
+        using var responseBody = new MemoryStream();
+        context.Response.Body = responseBody;
         try
         {
             await _next(context);
+
+            // Log the response
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            var responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+
+            _logger.LogInformation($"Response: {context.Response.StatusCode}, Body: {responseText}");
+
+            // Copy the contents of the new memory stream (which contains the response) to the original stream, which is then returned to the client.
+            await responseBody.CopyToAsync(originalBodyStream);
         }
         catch (Exception e)
         {
@@ -30,6 +44,10 @@ public class ExceptionHandlingMiddleware
             context.Response.ContentType = "application/json";
 
             await _HandleExceptionAsync(context, StatusCodes.Status503ServiceUnavailable, e.Message);
+        }
+        finally
+        {
+            context.Response.Body = originalBodyStream;
         }
     }
 

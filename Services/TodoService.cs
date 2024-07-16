@@ -43,7 +43,7 @@ public class TodoService : ITodoService
         return Response<Todo>.Success(result);
     }
 
-    public async Task<Response<Todo>> CreateAsync(CreateTodoRequest request)
+    public async Task<Response> CreateAsync(CreateTodoRequest request)
     {
         var todo = new Todo()
         {
@@ -57,9 +57,10 @@ public class TodoService : ITodoService
         if (!result.IsValid)
         {
             var error = _mapper.Map<List<Error>>(result.Errors);
-            return Response<Todo>.Failure(error, StatusCodes.Status400BadRequest);
+            return Response.Failure(error, StatusCodes.Status400BadRequest);
         }
 
-        return Response<Todo>.Success(todo);
+        //return Response<Todo>.Success(todo);
+        return Response.Success(StatusCodes.Status201Created);
     }
 }

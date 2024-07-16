@@ -34,6 +34,11 @@ public class Response<T> where T : class
         return new(new List<Error>(), result, StatusCodes.Status200OK);
     }
 
+    public static Response<T> Success(T result, int? statusCode = null)
+    {
+        return new(new List<Error>(), result, statusCode ?? StatusCodes.Status200OK);
+    }
+
     public static Response<T> Failure(List<Error> errors, int statusCode)
     {
         return new(errors, default(T), statusCode);
@@ -66,9 +71,9 @@ public class Response
         }
     }
 
-    public static Response Success()
+    public static Response Success(int? statusCode = null)
     {
-        return new(new List<Error>(), StatusCodes.Status200OK);
+        return new (new List<Error>(), statusCode ?? StatusCodes.Status200OK);
     }
 
     public static Response Failure(List<Error> errors, int statusCode)

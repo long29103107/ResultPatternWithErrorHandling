@@ -7,7 +7,7 @@ using ResultPatternExample.Services;
 namespace ResultPatternExample.Controllers;
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+//[Authorize]
 public class TodosController : ControllerBase
 {
     private readonly ITodoService _service;
