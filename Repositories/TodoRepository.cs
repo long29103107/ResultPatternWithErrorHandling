@@ -1,6 +1,6 @@
 ﻿namespace ResultPatternExample.Repositories;
 
-public class PostRepository : IPostRepository
+public class TodoRepository : ITodoRepository
 {
     private static HttpClient _httpClient = new()
     {

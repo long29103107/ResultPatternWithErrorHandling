@@ -1,6 +1,6 @@
 ﻿namespace ResultPatternExample.Repositories;
 
-public interface IPostRepository
+public interface ITodoRepository
 {
     Task<List<Todo>> GetAllAsync();
 }

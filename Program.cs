@@ -1,5 +1,9 @@
+using FluentValidation;
+using Microsoft.AspNetCore.Identity;
+using ResultPatternExample;
 using ResultPatternExample.Repositories;
 using ResultPatternExample.Services;
+using ResultPatternExample.Validations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +13,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<IPostRepository, PostRepository>();
-builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<ITodoRepository, TodoRepository>();
+builder.Services.AddScoped<ITodoService, TodoService>();
+builder.Services.AddValidatorsFromAssemblyContaining<TodoValidator>();
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 var app = builder.Build();
 
