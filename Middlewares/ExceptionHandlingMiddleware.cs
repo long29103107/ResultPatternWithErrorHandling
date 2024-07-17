@@ -1,6 +1,7 @@
 ﻿using ResultPatternExample.Exceptions;
 using ResultPatternExample.Responses;
-using System.Text.Json;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace ResultPatternExample.Middlewares;
 
@@ -16,50 +17,54 @@ public class ExceptionHandlingMiddleware
         _next = next;
         _logger = logger;
     }
-
-    public async Task InvokeAsync(HttpContext context)
+    public async Task Invoke(HttpContext context)
     {
-        // Buffer the response body
-        //var originalBodyStream = context.Response.Body;
-        //using var responseBody = new MemoryStream();
-        //context.Response.Body = responseBody;
+        var errorMsg = string.Empty;
         try
         {
-            await _next(context);
-
-            // Log the response
-            //context.Response.Body.Seek(0, SeekOrigin.Begin);
-            //var responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
-
-            //var data = JsonSerializer.Deserialize<Response>(responseText);
-
-            //context.Response.Body.Seek(0, SeekOrigin.Begin);
-
-            //_logger.LogInformation($"Response: {context.Response.StatusCode}, Body: {responseText}");
-
-            // Copy the contents of the new memory stream (which contains the response) to the original stream, which is then returned to the client.
-            //await responseBody.CopyToAsync(originalBodyStream);
+            await _next.Invoke(context);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogError(e, "Exception occurred: {Message}", e.Message);
-
-            context.Response.ContentType = "application/json";
-
-            await _HandleExceptionAsync(context, StatusCodes.Status503ServiceUnavailable, e.Message);
+            _logger.LogError(ex, ex.Message);
+            errorMsg = ex.Message;
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         }
-        //finally
-        //{
-        //    context.Response.Body = originalBodyStream;
-        //}
+
+        var successList = new List<int>()
+        {
+            StatusCodes.Status204NoContent,
+            StatusCodes.Status202Accepted,
+            StatusCodes.Status200OK
+        };
+
+        if (!context.Response.HasStarted)
+        {
+            if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+            {
+                await _HandleResponseAsync(context, "Unauthorized");
+            }
+            else if (!context.Response.HasStarted && context.Response.StatusCode == StatusCodes.Status403Forbidden)
+            {
+                await _HandleResponseAsync(context, "Forbidden");
+            }
+            else if (successList.TrueForAll(x => x != context.Response.StatusCode))
+            {
+                await _HandleResponseAsync(context, errorMsg);
+            }
+        }
     }
 
-    private async Task _HandleExceptionAsync(HttpContext context, int statusCode, string message)
+    private async Task _HandleResponseAsync(HttpContext context, string message)
     {
-        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        context.Response.ContentType = "application/json";
 
-        var response =  Response.Failure(new Error { Message = message }, statusCode);
-      
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        var response = Response.Failure(new Error { Message = message }, context.Response.StatusCode);
+
+        var camelCaseFormatter = new JsonSerializerSettings();
+        camelCaseFormatter.ContractResolver = new CamelCasePropertyNamesContractResolver();
+
+        var json = JsonConvert.SerializeObject(response, camelCaseFormatter);
+        await context.Response.WriteAsync(json);
     }
 }
