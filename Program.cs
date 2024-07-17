@@ -89,11 +89,7 @@ app.UseAuthorization();
 app.MapPost("/create-default-admin", async (RoleManager<IdentityRole> roleManager,
                                 UserManager<IdentityUser> userManager) =>
 {
-    var roleCreationResult = await roleManager.CreateAsync(new(adminRole));
-    IdentityUser identityUser = new(adminUserName);
-    identityUser.Email = adminEmail;
-    var userCreationResult = await userManager.CreateAsync(identityUser, adminPassword);
-    var userAddToRoleResult = await userManager.AddToRoleAsync(identityUser, adminRole);
+    var (roleCreationResult, userCreationResult, userAddToRoleResult) = await _CreateAndAssignRoleAsync(roleManager, userManager, adminRole, adminUserName, adminEmail, adminPassword);
 
     return new { roleCreationResult, userCreationResult, userAddToRoleResult };
 });
@@ -101,41 +97,19 @@ app.MapPost("/create-default-admin", async (RoleManager<IdentityRole> roleManage
 app.MapPost("/create-default-user", async (RoleManager<IdentityRole> roleManager,
                                 UserManager<IdentityUser> userManager) =>
 {
-    var roleCreationResult = await roleManager.CreateAsync(new(userRole));
-    IdentityUser identityUser = new(userUserName);
-    identityUser.Email = userEmail;
-    var userCreationResult = await userManager.CreateAsync(identityUser, userPassword);
-    var userAddToRoleResult = await userManager.AddToRoleAsync(identityUser, userRole);
+    var (roleCreationResult, userCreationResult, userAddToRoleResult) = await _CreateAndAssignRoleAsync(roleManager, userManager, userRole, userUserName, userEmail, userPassword);
 
     return new { roleCreationResult, userCreationResult, userAddToRoleResult };
 });
 
 app.MapPost("/token-admin", async (UserManager<IdentityUser> userManager, IConfiguration configuration) =>
 {
-    List<Claim> claims = await _GetClaimsByUserAsync(userManager, adminUserName, adminPassword);
-
-    if (!claims.Any())
-    {
-        return Results.Ok("User is not found or login failed !");
-    }
-
-    string tokenValue = _WriteToken(configuration, claims);
-
-    return Results.Ok(tokenValue);
+    return Results.Ok(await _GetTokenByUserNamePasswordAsync(userManager, configuration, adminUserName, adminPassword));
 });
 
 app.MapPost("/token-user", async (UserManager<IdentityUser> userManager, IConfiguration configuration) =>
 {
-    List<Claim> claims = await _GetClaimsByUserAsync(userManager, userUserName, userPassword);
-
-    if(!claims.Any())
-    {
-        return Results.Ok("User is not found or login failed !");
-    }
-
-    string tokenValue = _WriteToken(configuration, claims);
-
-    return Results.Ok(tokenValue);
+    return Results.Ok(await _GetTokenByUserNamePasswordAsync(userManager, configuration, userUserName, userPassword));
 });
 
 app.MapGet("/secure", [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = adminRole)] () =>
@@ -143,10 +117,24 @@ app.MapGet("/secure", [Authorize(AuthenticationSchemes = JwtBearerDefaults.Authe
     return "I'm authorized!!";
 });
 
-
 app.MapControllers();
 
 app.Run();
+
+#region Get token by username password
+static async Task<string> _GetTokenByUserNamePasswordAsync(UserManager<IdentityUser> userManager, IConfiguration configuration, string username, string password)
+{
+    List<Claim> claims = await _GetClaimsByUserAsync(userManager, username, password);
+
+    if (!claims.Any())
+    {
+        return "User is not found or login failed !";
+    }
+
+    string tokenValue = _WriteToken(configuration, claims);
+
+    return tokenValue;
+}
 
 static async Task<List<Claim>> _GetClaimsByUserAsync(UserManager<IdentityUser> userManager, string username, string password)
 {
@@ -198,3 +186,24 @@ static string _WriteToken(IConfiguration configuration, List<Claim> claims)
 
     return tokenValue;
 }
+#endregion
+
+#region Create default user
+static async Task<(IdentityResult, IdentityResult, IdentityResult)> _CreateAndAssignRoleAsync(
+    RoleManager<IdentityRole> roleManager
+    , UserManager<IdentityUser> userManager
+    , string role
+    , string userName
+    , string email
+    , string password
+    )
+{
+    var roleCreationResult = await roleManager.CreateAsync(new(role));
+    IdentityUser identityUser = new(userName);
+    identityUser.Email = email;
+    var userCreationResult = await userManager.CreateAsync(identityUser, password);
+    var userAddToRoleResult = await userManager.AddToRoleAsync(identityUser, role);
+
+    return (roleCreationResult, userCreationResult, userAddToRoleResult);
+}
+#endregion
