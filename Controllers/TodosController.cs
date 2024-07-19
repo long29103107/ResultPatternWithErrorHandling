@@ -23,6 +23,12 @@ public class TodosController : ControllerBase
         return Ok(await _service.GetAllAsync());
     }
 
+    [HttpGet("make-list")]
+    public async Task<IActionResult> GetMakeListAsync([FromQuery] PagingRequest request)
+    {
+        return Ok(await _service.GetMakeListAsync(request));
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetAsync(int id)
     {

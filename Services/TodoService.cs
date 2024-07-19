@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FluentValidation;
 using ResultPatternExample.Exceptions;
+using ResultPatternExample.Extensions;
 using ResultPatternExample.Repositories;
 using ResultPatternExample.Requests;
 using ResultPatternExample.Responses;
@@ -60,7 +61,15 @@ public class TodoService : ITodoService
             return Response.Failure(error, StatusCodes.Status400BadRequest);
         }
 
-        //return Response<Todo>.Success(todo);
         return Response.Success(StatusCodes.Status201Created);
+    }
+
+    public async Task<PagingResponse<Todo>> GetMakeListAsync(PagingRequest request)
+    {
+        var dataset = await _repository.GetAllAsync();
+
+        var res = dataset.GetMakeList(request);
+
+        return PagingResponse<Todo>.Success(res);
     }
 }

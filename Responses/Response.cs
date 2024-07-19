@@ -4,6 +4,10 @@ namespace ResultPatternExample.Responses;
 
 public class Response<T> where T : class
 {
+    public Response()
+    {
+    }
+
     public Response(List<Error> errors, T result, int statusCode)
     {
         Errors = errors;

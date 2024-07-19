@@ -9,7 +9,10 @@ public class TodoRepository : ITodoRepository
 
     public async Task<List<Todo>> GetAllAsync()
     {
-        var result = await _httpClient.GetFromJsonAsync<List<Todo>>("todos");
+        var result = (await _httpClient.GetFromJsonAsync<List<Todo>>("todos"))
+            .ToList()
+            .Take(5)
+            .ToList();
 
         return result ?? new List<Todo>();
     }

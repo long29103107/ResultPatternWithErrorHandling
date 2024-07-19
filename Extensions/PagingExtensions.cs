@@ -4,8 +4,8 @@ namespace ResultPatternExample.Extensions;
 
 public static class PagingExtensions
 {
-    public static Response<PagingResponse<T>> GetMakeList<T>(this List<T> queryset, PagingRequest request) 
-        where T : PagingResponse<T>
+    public static PagingResponse<T> GetMakeList<T>(this List<T> queryset, PagingRequest request) 
+        where T : class
     {
         var result = new PagingResponse<T>();
 
@@ -19,11 +19,11 @@ public static class PagingExtensions
         var skip = (result.PageNumber - 1) * result.PageSize;
         var take = result.PageSize;
 
-        result.Results = queryset
+        result.Result = queryset
             .Skip(skip)
             .Take(take)
             .ToList();
 
-        return Response<PagingResponse<T>>.Success(result);
+        return PagingResponse<T>.Success(result);
     }
 }
