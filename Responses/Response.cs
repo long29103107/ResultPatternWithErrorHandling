@@ -1,23 +1,41 @@
-﻿using Error = ResultPatternExample.Exceptions.Error;
+﻿using Microsoft.AspNetCore.Mvc;
+using Error = ResultPatternExample.Exceptions.Error;
 
 namespace ResultPatternExample.Responses;
 
 public class Response<T> where T : class
 {
+    
     public Response()
     {
+        AddTypeResponse(this);
     }
 
     public Response(List<Error> errors, T result, int statusCode)
     {
         Errors = errors;
         StatusCode = statusCode;
+        AddTypeResponse(this);
 
         if (!errors.Any())
         {
             Result = result ?? (T)Activator.CreateInstance(typeof(T));
         }
     }
+
+    private void AddTypeResponse(Response<T> res)
+    {
+        if (res.Result != null && res.Result.GetType().IsGenericType && res.Result.GetType().GetGenericTypeDefinition() == typeof(List<>))
+        {
+            res.TypeResponse = (int)TypeResponseEnum.List;
+        }
+        else
+        {
+            res.TypeResponse = (int)TypeResponseEnum.Detail;
+        }
+    }
+
+    public int TypeResponse { get; set; }
 
     public T Result { get; set; }
 
@@ -59,9 +77,12 @@ public class Response
 {
     public Response(List<Error> errors,  int statusCode)
     {
+        TypeResponse = (int)TypeResponseEnum.NoContent;
         Errors = errors;
         StatusCode = statusCode;
     }
+
+    public int TypeResponse { get; }
 
     public List<Error> Errors { get; } = new List<Error>();
 

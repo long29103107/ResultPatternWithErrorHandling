@@ -7,7 +7,6 @@ using ResultPatternExample.Services;
 namespace ResultPatternExample.Controllers;
 [Route("api/[controller]")]
 [ApiController]
-//[Authorize]
 public class TodosController : ControllerBase
 {
     private readonly ITodoService _service;
@@ -38,6 +37,7 @@ public class TodosController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateAsync([FromBody] CreateTodoRequest request)
     {
-        return Ok(await _service.CreateAsync(request));
+        var result = await _service.CreateAsync(request);
+        return Ok(result);
     }
 }
