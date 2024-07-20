@@ -2,6 +2,7 @@
 using ResultPatternExample.Responses;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Http;
 
 namespace ResultPatternExample.Middlewares;
 
@@ -20,9 +21,20 @@ public class ExceptionHandlingMiddleware
     public async Task Invoke(HttpContext context)
     {
         var errorMsg = string.Empty;
+        Stream originalBody = context.Response.Body;
+        var memStream = new MemoryStream();
+        context.Response.Body = memStream;
+        string responseBody = string.Empty;
+
         try
         {
             await _next.Invoke(context);
+
+            memStream.Position = 0;
+            responseBody = await new StreamReader(memStream).ReadToEndAsync();
+
+            memStream.Position = 0;
+            await memStream.CopyToAsync(originalBody);            
         }
         catch (Exception ex)
         {
@@ -30,31 +42,36 @@ public class ExceptionHandlingMiddleware
             errorMsg = ex.Message;
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         }
-
-        var successList = new List<int>()
+        finally
         {
-            StatusCodes.Status204NoContent,
-            StatusCodes.Status202Accepted,
-            StatusCodes.Status200OK
-        };
+            context.Response.Body = originalBody;
 
-        if (!context.Response.HasStarted)
-        {
-            if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+            if (!context.Response.HasStarted)
             {
-                await _HandleResponseAsync(context, "Unauthorized");
-            }
-            else if (!context.Response.HasStarted && context.Response.StatusCode == StatusCodes.Status403Forbidden)
-            {
-                await _HandleResponseAsync(context, "Forbidden");
-            }
-            else if (successList.TrueForAll(x => x != context.Response.StatusCode))
-            {
-                await _HandleResponseAsync(context, errorMsg);
+                var successList = new List<int>()
+                {
+                    StatusCodes.Status204NoContent,
+                    StatusCodes.Status202Accepted,
+                    StatusCodes.Status200OK
+                };
+
+                if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+                {
+                    await _HandleResponseAsync(context, "Unauthorized");
+                }
+                else if (!context.Response.HasStarted && context.Response.StatusCode == StatusCodes.Status403Forbidden)
+                {
+                    await _HandleResponseAsync(context, "Forbidden");
+                }
+                else if (successList.TrueForAll(x => x != context.Response.StatusCode))
+                {
+                    await _HandleResponseAsync(context, errorMsg);
+                }
             }
         }
     }
 
+    #region Handle exception
     private async Task _HandleResponseAsync(HttpContext context, string message)
     {
         context.Response.ContentType = "application/json";
@@ -67,4 +84,5 @@ public class ExceptionHandlingMiddleware
         var json = JsonConvert.SerializeObject(response, camelCaseFormatter);
         await context.Response.WriteAsync(json);
     }
+    #endregion
 }

@@ -1,18 +1,17 @@
-﻿using Error = ResultPatternExample.Exceptions.Error;
+﻿using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
+using Error = ResultPatternExample.Exceptions.Error;
 
 namespace ResultPatternExample.Responses;
 
-public class Response<T> where T : class
+public class Response<T> : Response where T : class
 {
-    public Response()
+    public Response() : base(new List<Error>(), StatusCodes.Status200OK)
     {
     }
 
-    public Response(List<Error> errors, T result, int statusCode)
+    public Response(List<Error> errors, T result, int statusCode) : base(errors, StatusCodes.Status200OK)
     {
-        Errors = errors;
-        StatusCode = statusCode;
-
         if (!errors.Any())
         {
             Result = result ?? (T)Activator.CreateInstance(typeof(T));
@@ -20,18 +19,6 @@ public class Response<T> where T : class
     }
 
     public T Result { get; set; }
-
-    public List<Error> Errors { get; } = new List<Error>();
-
-    public int StatusCode { get;  } = StatusCodes.Status200OK;
-
-    public bool IsSuccess
-    {
-        get
-        {
-            return !this.Errors.Any();
-        }
-    }
 
     public static Response<T> Success(T result)
     {
@@ -41,6 +28,11 @@ public class Response<T> where T : class
     public static Response<T> Success(T result, int? statusCode = null)
     {
         return new(new List<Error>(), result, statusCode ?? StatusCodes.Status200OK);
+    }
+
+    public static Response<T> Success(int? statusCode = null)
+    {
+        return new(new List<Error>(), default(T), statusCode ?? StatusCodes.Status200OK);
     }
 
     public static Response<T> Failure(List<Error> errors, int statusCode)
@@ -63,9 +55,9 @@ public class Response
         StatusCode = statusCode;
     }
 
-    public List<Error> Errors { get; } = new List<Error>();
+    public List<Error> Errors { get; set; } = new List<Error>();
 
-    public int StatusCode { get; } = StatusCodes.Status200OK;
+    public int StatusCode { get; set; } = StatusCodes.Status200OK;
 
     public bool IsSuccess
     {
